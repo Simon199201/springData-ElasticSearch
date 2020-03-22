@@ -2,13 +2,19 @@ package com.itheima.es;
 
 import com.itheima.es.entity.Article;
 import com.itheima.es.repositories.ArticleRepository;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.List;
 import java.util.Optional;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -63,5 +69,35 @@ public class SpringDataElasticTest {
         Optional<Article> option = articleRepository.findById(12l);
         Article article = option.get();
         System.out.println(article);
+    }
+
+    @Test
+    public void findByTitle(){
+        List<Article> list = articleRepository.findByTitle("病毒");
+        list.forEach(s-> System.out.println(s));
+    }
+    @Test
+    public void findByTitleOrContent(){
+        List<Article> list = articleRepository.findByTitleOrContent("病毒","工作");
+        list.forEach(s-> System.out.println(s));
+    }
+    @Test
+    public void findByTitleOrContent_Page(){
+        //默认是从第0页开始
+        Pageable pageable = PageRequest.of(0, 5);
+        List<Article> list = articleRepository.findByTitleOrContent("病毒","工作",pageable);
+        list.forEach(s-> System.out.println(s));
+    }
+
+    @Test
+    public void testNativeQueryString(){
+        //使用native去查询
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(QueryBuilders.queryStringQuery("新增确诊病例"))
+                .withFields("content")
+                .withPageable(PageRequest.of(0,5))
+                .build();
+        List<Article> articles = elasticsearchTemplate.queryForList(query, Article.class);
+        System.out.println(articles);
     }
 }
